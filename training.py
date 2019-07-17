@@ -90,7 +90,7 @@ model = Model([encoder_inputs, decoder_inputs], output )
 model.compile(optimizer="adam", loss='categorical_crossentropy')
 
 model.summary()
-model.load_weights( 'model.h5' )
+# model.load_weights( 'model.h5' )
 # fit model
 checkpoint = ModelCheckpoint('model.h5', monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 batch_size = 128
@@ -102,7 +102,6 @@ model.fit_generator(
     validation_steps = int(8723 / 128),
     callbacks=[checkpoint]
 )
-model.save( 'model.h5' ) 
 
 def make_inference_models():
     

@@ -67,7 +67,7 @@ def write_hdf5(number, file_path, max_len_src, max_len_des, vocab_size_des, X, Y
 # load dataset
 raw_dataset = load_clean_sentences('english-german.pkl')
 # reduce dataset size
-n_sentences = 43608
+n_sentences = 43607
 dataset = raw_dataset[:n_sentences, :]
 # random shuffle
 shuffle(dataset)
@@ -90,16 +90,11 @@ print('German Max Length: %d' % (ger_length))
 trainX = encode_sequences(ger_tokenizer, ger_length, train[:, 1])
 trainY = encode_sequences(eng_tokenizer, eng_length, train[:, 0])
 outTrainY = encode_sequences(eng_tokenizer, eng_length, train[:, 0], isOutput=True)
-print('ger_tokenizer.items() ', eng_tokenizer.word_docs)
 
 # prepare validation data
 testX = encode_sequences(ger_tokenizer, ger_length, test[:, 1])
 testY = encode_sequences(eng_tokenizer, eng_length, test[:, 0])
 outTestY = encode_sequences(eng_tokenizer, eng_length, test[:, 0], isOutput=True)
-print("index ", eng_tokenizer.word_index['bstart'])
-print('testX.shape ', testX.shape)
-print('testY.shape ', testY.shape)
-print('outTrainY.shape ', outTrainY.shape)
 
 write_hdf5(int(n_sentences * 0.8), 'translate_train.hdf5', ger_length, eng_length, eng_vocab_size, trainX, trainY, outTrainY)
 write_hdf5(n_sentences - int(n_sentences * 0.8), 'translate_test.hdf5', ger_length, eng_length, eng_vocab_size, testX, testY, outTestY)

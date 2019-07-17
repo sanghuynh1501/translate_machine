@@ -18,6 +18,17 @@ from tensorflow.keras.utils import to_categorical
 from bahdanauAttention import AttentionLayer
 from hdf5DatasetGenerator import HDF5DatasetGenerator
 
+gpus = tf.config.experimental.list_physical_devices('GPU')
+if gpus:
+  # Restrict TensorFlow to only use the first GPU
+  try:
+    tf.config.experimental.set_visible_devices(gpus[0, 1], 'GPU')
+    logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+    print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPU")
+  except RuntimeError as e:
+    # Visible devices must be set before GPUs have been initialized
+    print(e)
+
 # load a clean dataset
 def load_clean_sentences(filename):
     return load(open(filename, 'rb'))
@@ -97,9 +108,10 @@ decoder_pred = dense_time(decoder_concat_input)
 
 # Full model
 full_model = Model(inputs=[encoder_inputs, decoder_inputs], outputs=decoder_pred)
-full_model.compile(optimizer='adam', loss='categorical_crossentropy')
+full_model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['acc'])
 
 full_model.summary()
+# full_model.load_weights('model.h5')
 
 batch_size = 128
 checkpoint = ModelCheckpoint('model.h5', monitor='val_loss', verbose=1, save_best_only=True, mode='min')

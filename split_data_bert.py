@@ -3,9 +3,6 @@ from pickle import dump, load
 import numpy as np
 import tensorflow as tf
 import tensorflow_hub as hub
-from keras.callbacks import ModelCheckpoint
-from keras.layers import LSTM, Dense, Embedding, RepeatVector, TimeDistributed
-from keras.models import Sequential
 from keras.preprocessing.sequence import pad_sequences
 from keras.preprocessing.text import Tokenizer
 from keras.utils import to_categorical
@@ -19,7 +16,7 @@ from hdf5DatasetWriter import HDF5DatasetWriterBert
 sess = tf.Session()
 
 def write_hdf5(number, file_path, max_len_src, max_len_des, inputs, masks, segments, outputs):
-    hdf5_dataset = HDF5DatasetWriterBert(input1_dims=(number, max_len_src), input2_dims=(number, max_len_des), input3_dims=(number, max_len_des), label_dims=(number, max_len_des), outputPath=file_path)
+    hdf5_dataset = HDF5DatasetWriterBert(input1_dims=(number, max_len_src), input2_dims=(number, max_len_src), input3_dims=(number, max_len_src), label_dims=(number, max_len_des), outputPath=file_path)
     with tqdm(total=number) as pbar:
         for i in range(0, number):
             input = expand_dims(inputs[i], axis=0)
@@ -48,14 +45,14 @@ def create_tokenizer_from_hub_module(bert_path):
     )
     return FullTokenizer(vocab_file=vocab_file, do_lower_case=do_lower_case)
 
-raw_dataset = load_clean_sentences('english-german-bert.pkl')
-n_sentences = 190000
+raw_dataset = load_clean_sentences('english-german.pkl')
+n_sentences = 43607
 dataset = raw_dataset[:n_sentences, :]
 shuffle(dataset)
 
 bert_path = "https://tfhub.dev/google/bert_uncased_L-12_H-768_A-12/1"
 tokenizer = create_tokenizer_from_hub_module(bert_path)
-encode_length = max_length(dataset[:, 0])
+encode_length = max_length(dataset[:, 1])
 input_ids = []
 input_masks = []
 segment_ids = []
@@ -82,8 +79,7 @@ input_ids = pad_sequences(input_ids, maxlen=encode_length, padding='post')
 input_masks = pad_sequences(input_masks, maxlen=encode_length, padding='post')
 segment_ids = pad_sequences(segment_ids, maxlen=encode_length, padding='post')
 
-decode_length = max_length(dataset[:, 1])
-vocal_size = 0
+decode_length = max_length(dataset[:, 0])
 output_ids = []
 for decode in dataset[:, 1]:
     # pharse 1
@@ -93,13 +89,8 @@ for decode in dataset[:, 1]:
         tokens.append(token)
     tokens.append("[SEP]")
     output_id = tokenizer.convert_tokens_to_ids(tokens)
-    # pharse 2
-    local_max = np.max(output_id)
-    if local_max >= vocal_size:
-        vocal_size = local_max
-    # pharse 3
     output_ids.append(output_id)
 
 output_ids = pad_sequences(output_ids, maxlen=decode_length, padding='post')
-write_hdf5(171000, 'bert_train.hdf5', encode_length, decode_length, input_ids[:171000], input_masks[:171000], segment_ids[:171000], output_ids[:171000])
-write_hdf5(19000, 'bert_test.hdf5', encode_length, decode_length, input_ids[171000:], input_masks[171000:], segment_ids[171000:], output_ids[171000:])
+write_hdf5(int(n_sentences * 0.8), 'bert_train.hdf5', encode_length, decode_length, input_ids[:int(n_sentences * 0.8)], input_masks[:int(n_sentences * 0.8)], segment_ids[:int(n_sentences * 0.8)], output_ids[:int(n_sentences * 0.8)])
+write_hdf5(n_sentences - int(n_sentences * 0.8), 'bert_test.hdf5', encode_length, decode_length, input_ids[int(n_sentences * 0.8):], input_masks[int(n_sentences * 0.8):], segment_ids[int(n_sentences * 0.8):], output_ids[int(n_sentences * 0.8):])

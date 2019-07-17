@@ -1,20 +1,21 @@
 import os
 import re
 
+import keras
 import numpy as np
 import pandas as pd
 import tensorflow as tf
 import tensorflow_hub as hub
-from tensorflow.keras import backend as K
-from tensorflow.keras.callbacks import ModelCheckpoint
-from tensorflow.keras.utils import to_categorical
+from keras import backend as K
+from keras.callbacks import ModelCheckpoint
+from keras.utils import to_categorical
 from tqdm import tqdm
 
 from bert.tokenization import FullTokenizer
 from hdf5DatasetGenerator import HDF5DatasetGeneratorBert
 
 
-class BertLayer(tf.keras.layers.Layer):
+class BertLayer(keras.layers.Layer):
     def __init__(
         self,
         n_fine_tune_layers=10,
@@ -108,18 +109,18 @@ class BertLayer(tf.keras.layers.Layer):
 
 
 # Build model
-def build_model(max_seq_length=10):
-    in_id = tf.keras.layers.Input(shape=(max_seq_length,), name="input_ids")
-    in_mask = tf.keras.layers.Input(shape=(max_seq_length,), name="input_masks")
-    in_segment = tf.keras.layers.Input(shape=(max_seq_length,), name="segment_ids")
+def build_model(max_seq_length=48):
+    in_id = keras.layers.Input(shape=(max_seq_length,), name="input_ids")
+    in_mask = keras.layers.Input(shape=(max_seq_length,), name="input_masks")
+    in_segment = keras.layers.Input(shape=(max_seq_length,), name="segment_ids")
     bert_inputs = [in_id, in_mask, in_segment]
 
     bert_output = BertLayer(n_fine_tune_layers=3)(bert_inputs)
-    dense = tf.keras.layers.Dense(256, activation="relu")(bert_output)
-    pred = tf.keras.layers.Dense(1, activation="sigmoid")(dense)
+    dense = keras.layers.Dense(256, activation="relu")(bert_output)
+    pred = keras.layers.Dense(51, activation="softmax")(dense)
 
-    model = tf.keras.models.Model(inputs=bert_inputs, outputs=pred)
-    model.compile(loss="binary_crossentropy", optimizer="adam", metrics=["accuracy"])
+    model = keras.models.Model(inputs=bert_inputs, outputs=pred)
+    model.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
     model.summary()
 
     return model
@@ -137,20 +138,20 @@ def next_batch(data_path, batch_size):
     generator = HDF5DatasetGeneratorBert(dbPath=data_path, batchSize=batch_size, binarize=False)
     while True:
         generate = generator.generator()
-        for X_data, Y_data, out_data in generate:
-            inputs =[X_data, Y_data]
-            outputs = encode_output(out_data, 29000)
+        for input, mask, sequence, output in generate:
+            inputs =[input, mask, sequence]
+            outputs = output
             yield (inputs, outputs)
 
-checkpoint = ModelCheckpoint('model.h5', monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+checkpoint = ModelCheckpoint('model_bert.h5', monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 batch_size = 32
 model = build_model()
 model.fit_generator(
-    generator = next_batch('translate_train.hdf5', batch_size), 
+    generator = next_batch('bert_train.hdf5', batch_size), 
     steps_per_epoch = int(34891 / 128),
     epochs=25,
-    validation_data=next_batch('translate_test.hdf5', batch_size), 
+    validation_data=next_batch('bert_test.hdf5', batch_size), 
     validation_steps = int(8723 / 128),
     callbacks=[checkpoint]
 )
-model.save( 'model.h5' ) 
+# model.save( 'model.h5' ) 

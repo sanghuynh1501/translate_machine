@@ -45,7 +45,7 @@ class HDF5DatasetWriterBert:
         self.db = h5py.File(outputPath, "w")
         self.data1 = self.db.create_dataset(dataKey1, input1_dims, dtype="float")
         self.data2 = self.db.create_dataset(dataKey2, input2_dims, dtype="float")
-        self.data3 = self.db.create_dataset(dataKey3, input1_dims, dtype="float")
+        self.data3 = self.db.create_dataset(dataKey3, input3_dims, dtype="float")
         self.labels = self.db.create_dataset("labels", label_dims, dtype="float")
         self.bufSize = bufSize
         self.buffer = {"data1": [], "data2": [], "data3": [], "labels": []}
@@ -63,9 +63,10 @@ class HDF5DatasetWriterBert:
         i = self.idx + len(self.buffer["data1"])
         self.data1[self.idx:i] = self.buffer["data1"]
         self.data2[self.idx:i] = self.buffer["data2"]
+        self.data3[self.idx:i] = self.buffer["data3"]
         self.labels[self.idx:i] = self.buffer["labels"]
         self.idx = i
-        self.buffer = {"data1": [], "data2": [], "labels": []}
+        self.buffer = {"data1": [], "data2": [], "data3": [], "labels": []}
     
     def storeClassLabels(self, classLabels):
         dt = h5py.special_dtype(vlen=str)

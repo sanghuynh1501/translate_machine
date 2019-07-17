@@ -98,7 +98,7 @@ def to_pairs(doc):
                 if '-' in values[1].text:
                     for word in value.text.split(' '):
                         if '-' in word:
-                            print('word ', word)
+                            word.replace('-', ' ')
                 for value in values:
                     pair.append(text_to_vietkey(value.text))
                 if (len(pair[0].split()) <= 50 and len(pair[1].split()) <= 50):
