@@ -89,39 +89,26 @@ def text_to_vietkey(s):
 def to_pairs(doc):
     lines = doc.strip().split('\n')
     pairs = [line.split('\t') for line in lines]
+    for file_name in os.listdir('vn_data_xml'):
+        try:
+            root = ET.parse('vn_data_xml/' + file_name).getroot()
+            for pair in root.findall('text/spair'):
+                values = pair.findall('s')
+                pair = []
+                if '-' in values[1].text:
+                    for word in values[1].text.split(' '):
+                        if '-' in word:
+                            word.replace('-', ' ')
+                for value in values:
+                    line = value.text
+                    line = [word.lower() for word in line]
+                    pair.append(''.join(line))
+                if (len(pair[0].split()) <= 32 and len(pair[1].split()) <= 43):
+                    pairs.append(pair)
+        except:
+            print('error')
     for pair in pairs:
         pair[1] = ViTokenizer.tokenize(pair[1])
-    # re_punc = re.compile('[%s]' % re.escape(string.punctuation))
-    # re_print = re.compile('[^%s]' % re.escape(string.printable)) 
-    # for file_name in os.listdir('vn_data_xml'):
-    #     try:
-    #         root = ET.parse('vn_data_xml/' + file_name).getroot()
-    #         for pair in root.findall('text/spair'):
-    #             values = pair.findall('s')
-    #             pair = []
-    #             if '-' in values[1].text:
-    #                 for word in value.text.split(' '):
-    #                     if '-' in word:
-    #                         word.replace('-', ' ')
-    #             for value in values:
-    #                 line = text_to_vietkey(value.text)
-    #                 line = normalize('NFD', line).encode('ascii', 'ignore')
-    #                 line = line.decode('UTF-8')
-    #                 # tokenize on white space
-    #                 line = line.split()
-    #                 # convert to lowercase
-    #                 line = [word.lower() for word in line]
-    #                 # remove punctuation from each token
-    #                 line = [re_punc.sub('', w) for w in line]
-    #                 # remove non-printable chars form each token
-    #                 line = [re_print.sub('', w) for w in line]
-    #                 # remove tokens with numbers in them
-    #                 line = [word for word in line if word.isalpha()]
-    #                 pair.append(' '.join(line))
-    #             if (len(pair[0].split()) <= 32 and len(pair[1].split()) <= 43):
-    #                 pairs.append(pair)
-    #     except:
-    #         print('error')
     return pairs
 
 # clean a list of lines
@@ -190,8 +177,8 @@ pairs = to_pairs(doc)
 # clean sentences
 clean_pairs = clean_pairs(pairs)
 # save clean pairs to file
-save_clean_data(clean_pairs, 'data/english-vietnamese-min.pkl')
+save_clean_data(clean_pairs, 'data/english-vietnamese-all.pkl')
 print(clean_pairs.shape)
 # spot check
 for i in range(50):
-    print('[%s] => [%s]' % (clean_pairs[i,0], clean_pairs[i,1]))
+    print('[%s] => [%s]' % (clean_pairs[i + 4000,0], clean_pairs[i + 4000,1]))
