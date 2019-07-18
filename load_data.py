@@ -4,14 +4,14 @@ import string
 import xml.etree.ElementTree as ET
 from pickle import dump
 from unicodedata import normalize
-
+from pyvi import ViTokenizer
 from numpy import array
 
 # load doc into memory
 def load_doc(filename):
     file = open(filename, mode='rt', encoding='utf-8')
     text = file.read()
-    text = text_to_vietkey(text)
+    # text = text_to_vietkey(text)
     file.close()
     return text
 
@@ -89,22 +89,39 @@ def text_to_vietkey(s):
 def to_pairs(doc):
     lines = doc.strip().split('\n')
     pairs = [line.split('\t') for line in lines]
-    for file_name in os.listdir('vn_data_xml'):
-        try:
-            root = ET.parse('vn_data_xml/' + file_name).getroot()
-            for pair in root.findall('text/spair'):
-                values = pair.findall('s')
-                pair = []
-                if '-' in values[1].text:
-                    for word in value.text.split(' '):
-                        if '-' in word:
-                            word.replace('-', ' ')
-                for value in values:
-                    pair.append(text_to_vietkey(value.text))
-                if (len(pair[0].split()) <= 50 and len(pair[1].split()) <= 50):
-                    pairs.append(pair)
-        except:
-            print('error')
+    for pair in pairs:
+        pair[1] = ViTokenizer.tokenize(pair[1])
+    # re_punc = re.compile('[%s]' % re.escape(string.punctuation))
+    # re_print = re.compile('[^%s]' % re.escape(string.printable)) 
+    # for file_name in os.listdir('vn_data_xml'):
+    #     try:
+    #         root = ET.parse('vn_data_xml/' + file_name).getroot()
+    #         for pair in root.findall('text/spair'):
+    #             values = pair.findall('s')
+    #             pair = []
+    #             if '-' in values[1].text:
+    #                 for word in value.text.split(' '):
+    #                     if '-' in word:
+    #                         word.replace('-', ' ')
+    #             for value in values:
+    #                 line = text_to_vietkey(value.text)
+    #                 line = normalize('NFD', line).encode('ascii', 'ignore')
+    #                 line = line.decode('UTF-8')
+    #                 # tokenize on white space
+    #                 line = line.split()
+    #                 # convert to lowercase
+    #                 line = [word.lower() for word in line]
+    #                 # remove punctuation from each token
+    #                 line = [re_punc.sub('', w) for w in line]
+    #                 # remove non-printable chars form each token
+    #                 line = [re_print.sub('', w) for w in line]
+    #                 # remove tokens with numbers in them
+    #                 line = [word for word in line if word.isalpha()]
+    #                 pair.append(' '.join(line))
+    #             if (len(pair[0].split()) <= 32 and len(pair[1].split()) <= 43):
+    #                 pairs.append(pair)
+    #     except:
+    #         print('error')
     return pairs
 
 # clean a list of lines
@@ -112,25 +129,46 @@ def clean_pairs(lines, isBert=False):
     cleaned = list()
     # prepare regex for char filtering
     re_punc = re.compile('[%s]' % re.escape(string.punctuation))
-    re_print = re.compile('[^%s]' % re.escape(string.printable)) 
+    # re_print = re.compile('[^%s]' % re.escape(string.printable)) 
     for pair in lines:
         clean_pair = list()
         for line in pair:
             # normalize unicode characters
-            line = normalize('NFD', line).encode('ascii', 'ignore')
-            line = line.decode('UTF-8')
+            # line = normalize('NFD', line).encode('ascii', 'ignore')
+            # line = line.decode('UTF-8')
             # tokenize on white space
             line = line.split()
             # convert to lowercase
             line = [word.lower() for word in line]
             # remove punctuation from each token
-            line = [re_punc.sub('', w) for w in line]
+            sub_line = []
+            for w in line:
+                char = []
+                for c in w.split('_'):
+                    c = re_punc.sub('', c)
+                    char.append(c)
+                char = '_'.join(char)
+                sub_line.append(char)
+            line = sub_line
+            # print('sub_line ', sub_line)
+            # line = [re_punc.sub('', w) if w != '_' else w for w in line]
             # remove non-printable chars form each token
-            line = [re_print.sub('', w) for w in line]
+            # line = [re_print.sub('', w) for w in line]
+            
             # remove tokens with numbers in them
-            line = [word for word in line if word.isalpha()]
+            sub_line = []
+            for w in line:
+                char = []
+                for c in w.split('_'):
+                    if c.isalpha():
+                        char.append(c)
+                    else:
+                        char.append('')
+                char = '_'.join(char)
+                sub_line.append(char)
+            line = sub_line
             # store as string
-            clean_pair.append(' '.join(line))
+            clean_pair.append(text_to_vietkey(re.sub(' +', ' ', ' '.join(line)).rstrip()))
         t = clean_pair[0]
         clean_pair[0] = clean_pair[1]
         clean_pair[1] = t
@@ -152,9 +190,8 @@ pairs = to_pairs(doc)
 # clean sentences
 clean_pairs = clean_pairs(pairs)
 # save clean pairs to file
-save_clean_data(clean_pairs, 'english-german.pkl')
+save_clean_data(clean_pairs, 'data/english-vietnamese-min.pkl')
 print(clean_pairs.shape)
 # spot check
-text_file = open("Output.txt", "w")
-for i in range(len(clean_pairs)):
-    text_file.write('[%s] => [%s]' % (clean_pairs[i,0], clean_pairs[i,1]))
+for i in range(50):
+    print('[%s] => [%s]' % (clean_pairs[i,0], clean_pairs[i,1]))

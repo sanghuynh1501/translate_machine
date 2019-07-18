@@ -65,9 +65,9 @@ def write_hdf5(number, file_path, max_len_src, max_len_des, vocab_size_des, X, Y
     return
 
 # load dataset
-raw_dataset = load_clean_sentences('english-german.pkl')
+raw_dataset = load_clean_sentences('data/english-vietnamese-min.pkl')
 # reduce dataset size
-n_sentences = 43607
+n_sentences = 3397
 dataset = raw_dataset[:n_sentences, :]
 # random shuffle
 shuffle(dataset)
@@ -96,7 +96,7 @@ testX = encode_sequences(ger_tokenizer, ger_length, test[:, 1])
 testY = encode_sequences(eng_tokenizer, eng_length, test[:, 0])
 outTestY = encode_sequences(eng_tokenizer, eng_length, test[:, 0], isOutput=True)
 
-write_hdf5(int(n_sentences * 0.8), 'translate_train.hdf5', ger_length, eng_length, eng_vocab_size, trainX, trainY, outTrainY)
-write_hdf5(n_sentences - int(n_sentences * 0.8), 'translate_test.hdf5', ger_length, eng_length, eng_vocab_size, testX, testY, outTestY)
-save_clean_data(dataset, 'english-german-both.pkl')
-save_clean_data(test, 'english-german-test.pkl')
+write_hdf5(int(n_sentences * 0.8), 'hdf5/translate_train_min.hdf5', ger_length, eng_length, eng_vocab_size, trainX, trainY, outTrainY)
+write_hdf5(n_sentences - int(n_sentences * 0.8), 'hdf5/translate_test_min.hdf5', ger_length, eng_length, eng_vocab_size, testX, testY, outTestY)
+save_clean_data(dataset, 'data/english-vietnamese-both-min.pkl')
+save_clean_data(test, 'data/english-vietnamese-test-min.pkl')

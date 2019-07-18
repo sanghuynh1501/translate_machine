@@ -1,3 +1,4 @@
+import re
 import numpy as np
 from pickle import load
 
@@ -15,14 +16,87 @@ from numpy import array
 from hdf5DatasetGenerator import HDF5DatasetGenerator
 print("GPU Available: ", tf.test.is_gpu_available())
 
-gpus = tf.config.experimental.list_physical_devices('GPU')
-if gpus:
-    try:
-        tf.config.experimental.set_visible_devices(gpus[0], 'GPU')
-        logical_gpus = tf.config.experimental.list_logical_devices('GPU')
-        print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPU")
-    except RuntimeError as e:
-        print(e)
+def text_to_vietkey(s):
+    s = s.lower()
+    s = re.sub( 'bstart ' , '', s)
+    s = re.sub( 'dend ' , '', s)
+    s = re.sub( 'aws', 'ắ', s)
+    s = re.sub( 'awf', 'ằ', s)
+    s = re.sub( 'awr', 'ẳ', s)
+    s = re.sub( 'awx', 'ẵ', s)
+    s = re.sub( 'aar', 'ẩ', s)
+    s = re.sub( 'aas', 'ấ', s)
+    s = re.sub( 'aax', 'ẫ', s)
+    s = re.sub( 'oof', 'ồ', s)
+    s = re.sub( 'uws', 'ứ', s)
+    s = re.sub( 'uwf', 'ừ', s)
+    s = re.sub( 'uwr', 'ử', s)
+    s = re.sub( 'uwx', 'ữ', s)
+    s = re.sub( 'uwj', 'ự', s)
+    s = re.sub( 'oox', 'ỗ', s)
+    s = re.sub( 'ooj', 'ộ', s)
+    s = re.sub( 'aaf', 'ầ', s)
+    s = re.sub( 'aaj', 'ậ', s)
+    s = re.sub( 'awj', 'ặ', s)
+    s = re.sub( 'eef', 'ề', s)
+    s = re.sub( 'ees', 'ế', s)
+    s = re.sub( 'oos', 'ố', s)
+    s = re.sub( 'eex', 'ễ', s)
+    s = re.sub( 'oor', 'ổ', s)
+    s = re.sub( 'eer', 'ể', s)
+    s = re.sub( 'eej', 'ệ', s)
+    s = re.sub( 'ows', 'ớ', s)
+    s = re.sub( 'owf', 'ờ', s)
+    s = re.sub( 'owr', 'ở', s)
+    s = re.sub( 'owx', 'ỡ', s)
+    s = re.sub( 'owj', 'ợ', s)
+    s = re.sub( 'is' , 'í', s)
+    s = re.sub( 'as' , 'á', s)
+    s = re.sub( 'af' , 'à', s)
+    s = re.sub( 'ar' , 'ả', s)
+    s = re.sub( 'ax' , 'ã', s)
+    s = re.sub( 'aj' , 'ạ', s)
+    s = re.sub( 'aw' , 'ă', s)
+    s = re.sub( 'aa' , 'â', s)
+    s = re.sub( 'es' , 'é', s)
+    s = re.sub( 'ef' , 'è', s)
+    s = re.sub( 'er' , 'ẻ', s)
+    s = re.sub( 'ex' , 'ẽ', s)
+    s = re.sub( 'ej' , 'ẹ', s)
+    s = re.sub( 'ee' , 'ê', s)
+    s = re.sub( 'os' , 'ó', s)
+    s = re.sub( 'of' , 'ò', s)
+    s = re.sub( 'or' , 'ỏ', s)
+    s = re.sub( 'ox' , 'õ', s)
+    s = re.sub( 'oj' , 'ọ', s)
+    s = re.sub( 'oo' , 'ô', s)
+    s = re.sub( 'ow' , 'ơ', s)
+    s = re.sub( 'if' , 'ì', s)
+    s = re.sub( 'ir' , 'ỉ', s)
+    s = re.sub( 'ix' , 'ĩ', s)
+    s = re.sub( 'ij' , 'ị', s)
+    s = re.sub( 'us' , 'ú', s)
+    s = re.sub( 'uf' , 'ù', s)
+    s = re.sub( 'ur' , 'ủ', s)
+    s = re.sub( 'ux' , 'ũ', s)
+    s = re.sub( 'uj' , 'ụ', s)
+    s = re.sub( 'uw' , 'ư', s)
+    s = re.sub( 'ys' , 'ý', s)
+    s = re.sub( 'yf' , 'ỳ', s)
+    s = re.sub( 'yr' , 'ỷ', s)
+    s = re.sub( 'yx' , 'ỹ', s)
+    s = re.sub( 'yj' , 'ỵ', s)
+    s = re.sub( 'dd' , 'đ', s)
+    return s
+
+# gpus = tf.config.experimental.list_physical_devices('GPU')
+# if gpus:
+#     try:
+#         tf.config.experimental.set_visible_devices(gpus[2], 'GPU')
+#         logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+#         print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPU")
+#     except RuntimeError as e:
+#         print(e)
 
 # load a clean dataset
 def load_clean_sentences(filename):
@@ -57,7 +131,7 @@ def next_batch(data_path, batch_size, eng_length):
           yield (inputs, outputs)
 
 # load datasets
-dataset = load_clean_sentences('english-german-both.pkl')
+dataset = load_clean_sentences('data/english-vietnamese-both-min.pkl')
 
 # prepare english tokenizer
 eng_tokenizer = create_tokenizer(dataset[:, 0])
@@ -87,18 +161,21 @@ decoder_dense = Dense( eng_vocab_size , activation="softmax" )
 output = decoder_dense ( decoder_outputs )
 
 model = Model([encoder_inputs, decoder_inputs], output )
-model.compile(optimizer="adam", loss='categorical_crossentropy')
+model.compile(optimizer="adam", loss='categorical_crossentropy', metrics=['acc'])
 
 model.summary()
-# model.load_weights( 'model.h5' )
+try:
+    model.load_weights( 'model/model.h5' )
+except:
+    print('no model')
 # fit model
-checkpoint = ModelCheckpoint('model.h5', monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+checkpoint = ModelCheckpoint('model/model.h5', monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 batch_size = 128
 model.fit_generator(
-    generator = next_batch('translate_train.hdf5', batch_size, eng_length), 
+    generator = next_batch('hdf5/translate_train_min.hdf5', batch_size, eng_length), 
     steps_per_epoch = int(34891 / 128),
     epochs=25,
-    validation_data=next_batch('translate_test.hdf5', batch_size, eng_length), 
+    validation_data=next_batch('hdf5/translate_test_min.hdf5', batch_size, eng_length), 
     validation_steps = int(8723 / 128),
     callbacks=[checkpoint]
 )
@@ -131,6 +208,36 @@ def encode_sequences(tokenizer, length, text):
 
 enc_model , dec_model = make_inference_models()
 
+# load datasets
+dataset = load_clean_sentences('data/english-vietnamese-both-min.pkl')
+test_data = load_clean_sentences('data/english-vietnamese-test-min.pkl')
+
+# for text in test_data:
+#     raw_target, raw_src = text 
+#     states_values = enc_model.predict( encode_sequences(ger_tokenizer, ger_length, raw_src) )
+#     #states_values = enc_model.predict( encoder_input_data[ epoch ] )
+#     empty_target_seq = np.zeros( ( 1 , 1 ) )
+#     empty_target_seq[0, 0] = eng_tokenizer.word_index['bstart']
+#     stop_condition = False
+#     a = [ empty_target_seq ] + states_values
+#     decoded_translation = ''
+#     while not stop_condition :
+#         dec_outputs , h , c = dec_model.predict([ empty_target_seq ] + states_values )
+#         sampled_word_index = np.argmax( dec_outputs[0, -1, :] )
+#         sampled_word = None
+#         for word , index in eng_tokenizer.word_index.items() :
+#             if sampled_word_index == index :
+#                 decoded_translation += ' {}'.format( word )
+#                 sampled_word = word
+        
+#         if sampled_word == 'kend' or len(decoded_translation.split()) > eng_length:
+#             stop_condition = True
+            
+#         empty_target_seq = np.zeros( ( 1 , 1 ) )  
+#         empty_target_seq[ 0 , 0 ] = sampled_word_index
+#         states_values = [ h , c ] 
+#     print('src=[%s], target=[%s], predicted=[%s]' % (raw_src, text_to_vietkey(raw_target), text_to_vietkey(decoded_translation)))
+
 while True:
     states_values = enc_model.predict( encode_sequences(ger_tokenizer, ger_length, input( 'Enter german sentence : ')) )
     #states_values = enc_model.predict( encoder_input_data[ epoch ] )
@@ -156,3 +263,22 @@ while True:
         states_values = [ h , c ] 
 
     print( decoded_translation )
+
+# def evaluate_model(model, sources, raw_dataset):
+#     actual, predicted = list(), list()
+#     for i, source in enumerate(sources):
+#         # translate encoded source text
+#         source = source.reshape((1, source.shape[0]))
+#         translation = predict_sequence(model, eng_tokenizer, source)
+#         raw_target, raw_src = raw_dataset[i]
+#         if i < 100:
+#             print('src=[%s], target=[%s], predicted=[%s]' % (raw_src, raw_target, translation))
+#         actual.append(raw_target.split())
+#         predicted.append(translation.split())
+#     # calculate BLEU score
+#     print('BLEU-1: %f' % corpus_bleu(actual, predicted, weights=(1.0, 0, 0, 0)))
+#     print('BLEU-2: %f' % corpus_bleu(actual, predicted, weights=(0.5, 0.5, 0, 0)))
+#     print('BLEU-3: %f' % corpus_bleu(actual, predicted, weights=(0.3, 0.3, 0.3, 0)))
+#     print('BLEU-4: %f' % corpus_bleu(actual, predicted, weights=(0.25, 0.25, 0.25, 0.25)))
+
+
